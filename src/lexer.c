@@ -56,13 +56,9 @@ static void skip_whitespace(Lexer* l) {
             case '\t':
                 advance(l);
                 break;
-            case '\n':
-                l -> line++;
-                advance(l);
-                break;  
             case '/':
                 if (peek_next(l) == '/') {
-                    while(peek(l) == '\n' && !is_at_end(l)) {
+                    while(peek(l) != '\n' && !is_at_end(l)) {
                         advance(l);
                     } 
                 } else {
@@ -95,7 +91,17 @@ static TokenType identifier_type(Lexer* l) {
             }
             break;
         case 'e':
-            return check_keyword(l, 1, 3, "lse", TOKEN_CHAR);
+            if(l -> current - l -> start > 1) {
+                switch(l -> start[1]) {
+                    case 'l':
+                        return check_keyword(l, 2, 2, "se", TOKEN_ELSE);
+                    case 'n':
+                        return check_keyword(l, 2, 2, "um", TOKEN_ENUM);
+                    case 'x':
+                        return check_keyword(l, 2, 4, "tern", TOKEN_EXTERN);
+                }
+            }
+            break;
         case 'f':
             if (l -> current - l -> start > 1) {
                 switch(l -> start[1]) {
@@ -137,19 +143,26 @@ static TokenType identifier_type(Lexer* l) {
                 }
             }
             break;
+        case 't':
+            return check_keyword(l, 1, 3, "rue", TOKEN_INT_LIT);
         case 'u':
-            if(l -> current - l -> start > 1) {
-                switch(l -> start[1]) {
-                    case 'i':
-                        return check_keyword(l, 2, 2, "nt", TOKEN_UINT);
-                    case 'n':
-                        if(l -> start[2] == 's') {
-                            return check_keyword(l, 3, 3, "afe", TOKEN_UNSAFE);
-                        }
-                        break;
-                }
-            }
-            break;
+             if (l->current - l->start > 1) {
+                 switch (l->start[1]) {
+                     case 'i': return check_keyword(l, 2, 2, "nt", TOKEN_UINT);
+                     case 'n':
+                         if (l->current - l->start > 2) {
+                            if (l->start[2] == 's') {
+                                if (l->current - l->start == 6) {
+                                    return check_keyword(l, 3, 3, "afe", TOKEN_UNSAFE);
+                                }
+                                return check_keyword(l, 3, 5, "igned", TOKEN_UNSIGNED);
+                            }
+                            if (l->start[2] == 'i') return check_keyword(l, 3, 2, "on", TOKEN_UNION);
+                         }
+                         break;
+                 }
+             }
+             break;
         case 'v':
             if(l -> current - l -> start > 1) {
                     if(l -> start[1] == 'a') {
@@ -180,16 +193,36 @@ static Token string(Lexer* l) {
     return make_token(l, TOKEN_STRING_LIT);
 }
 
+static Token character(Lexer* l) {
+    if(is_at_end(l)) {
+        return error_token(l, "Unterminated char.");
+    }
+    advance(l);
+    if(peek(l) != '\'') {
+        return error_token(l, "Expected closing '");
+    }
+    advance(l);
+    return make_token(l, TOKEN_CHAR_LIT);
+}
+
 static Token number(Lexer* l) {
+    char prev = l -> current[-1];
+    if(prev == '0' && (peek(l) == 'x' || peek(l) == 'X')) {
+        advance(l);
+        while(isxdigit(peek(l))) {
+            advance(l);
+        }
+        return make_token(l, TOKEN_INT_LIT);
+    }
     while(isdigit(peek(l))) {
         advance(l);
     }
     if(peek(l) == '.' && isdigit(peek_next(l))) {
-        advance(l); 
+        advance(l);
         while(isdigit(peek(l))) {
             advance(l);
         }
-        return make_token(l, TOKEN_FLOAT_LIT);
+        return make_token(l, TOKEN_FLOAT_LIT);  
     }
     return make_token(l, TOKEN_INT_LIT);
 }
@@ -208,6 +241,10 @@ Token lexer_next_token(Lexer* l) {
         return make_token(l, TOKEN_EOF);
     }
     char c = advance(l);
+    if(c == '\n') {
+        l -> line++;
+        return make_token(l, TOKEN_NEWLINE);
+    }
     if(isalpha(c) || c == '_') {
         return identifier(l);
     }
@@ -243,6 +280,8 @@ Token lexer_next_token(Lexer* l) {
             return make_token(l, (peek(l) == '|') ? (advance(l), TOKEN_OR_OR) : TOKEN_OR);
         case '"':
             return string(l);
+        case '\'':
+            return character(l);
     }
     return error_token(l, "Unexpected Character.");
 }

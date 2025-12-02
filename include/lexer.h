@@ -4,6 +4,7 @@
 
 typedef enum {
     TOKEN_EOF,
+    TOKEN_NEWLINE,
     TOKEN_ERR,
 
     // Keywords
