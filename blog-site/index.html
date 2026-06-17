@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github-dark.min.css" id="hljs-theme">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #161616;
+            --text: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --heading: #f0f0f0;
+            --heading-2: #ddd;
+            --heading-3: #ccc;
+            --link: #6ea8fe;
+            --link-underline: #3d6fb4;
+            --blockquote-border: #444;
+            --blockquote-text: #999;
+            --code-bg: #222;
+            --pre-bg: #1c1c1c;
+            --pre-border: #2a2a2a;
+            --hr: #333;
+            --toggle-bg: transparent;
+            --toggle-hover: transparent;
+        }
+
+        [data-theme="light"] {
+            --bg: #fafafa;
+            --text: #2c2c2c;
+            --text-muted: #999;
+            --heading: #111;
+            --heading-2: #222;
+            --heading-3: #333;
+            --link: #2563eb;
+            --link-underline: #93b4f5;
+            --blockquote-border: #d1d5db;
+            --blockquote-text: #555;
+            --code-bg: #f0f0f0;
+            --pre-bg: #f5f5f5;
+            --pre-border: #e8e8e8;
+            --hr: #e5e5e5;
+            --toggle-bg: transparent;
+            --toggle-hover: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            line-height: 1.7;
+            color: var(--text);
+            background-color: var(--bg);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 4rem 1.5rem;
+            position: relative;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.25rem;
+            background: var(--toggle-bg);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text);
+            transition: background 0.2s ease;
+            z-index: 100;
+            padding: 0;
+            line-height: 0;
+        }
+
+        .theme-toggle span {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover {
+            background: var(--toggle-hover);
+        }
+
+        [data-theme="dark"] .icon-light { display: inline; }
+        [data-theme="dark"] .icon-dark { display: none; }
+        [data-theme="light"] .icon-light { display: none; }
+        [data-theme="light"] .icon-dark { display: inline; }
+
+        #content {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #content.loaded {
+            opacity: 1;
+        }
+
+        #content h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+            color: var(--heading);
+        }
+
+        #content h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 2.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--heading-2);
+        }
+
+        #content h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--heading-3);
+        }
+
+        #content p {
+            margin-bottom: 1.25rem;
+        }
+
+        #content a {
+            color: var(--link);
+            text-decoration: underline;
+            text-decoration-color: var(--link-underline);
+            text-underline-offset: 2px;
+        }
+
+        #content a:hover {
+            text-decoration-color: var(--link);
+        }
+
+        #content blockquote {
+            border-left: 3px solid var(--blockquote-border);
+            padding-left: 1.25rem;
+            margin: 1.5rem 0;
+            color: var(--blockquote-text);
+            font-style: italic;
+        }
+
+        #content code {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.875em;
+            background: var(--code-bg);
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+        }
+
+        #content pre {
+            background: var(--pre-bg);
+            border-radius: 8px;
+            padding: 1.25rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border: 1px solid var(--pre-border);
+        }
+
+        #content pre code {
+            background: none;
+            padding: 0;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        #content ul, #content ol {
+            margin-bottom: 1.25rem;
+            padding-left: 1.5rem;
+        }
+
+        #content li {
+            margin-bottom: 0.4rem;
+        }
+
+        #content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        #content hr {
+            border: none;
+            border-top: 1px solid var(--hr);
+            margin: 2.5rem 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <span class="icon-light"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span>
+        <span class="icon-dark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+    </button>
+
+    <main class="container">
+        <article id="content"
+                 hx-get="post.md"
+                 hx-trigger="load"
+                 hx-swap="innerHTML">
+            <div class="loading">Loading...</div>
+        </article>
+    </main>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            updateHljsTheme(next);
+        }
+
+        function updateHljsTheme(theme) {
+            const link = document.getElementById('hljs-theme');
+            if (theme === 'light') {
+                link.href = 'https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github.min.css';
+            } else {
+                link.href = 'https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github-dark.min.css';
+            }
+        }
+
+        const saved = localStorage.getItem('theme');
+        if (saved) {
+            document.documentElement.setAttribute('data-theme', saved);
+            updateHljsTheme(saved);
+        }
+
+        document.body.addEventListener('htmx:beforeSwap', function(event) {
+            if (event.detail.target.id === 'content') {
+                event.detail.serverResponse = marked.parse(event.detail.serverResponse);
+            }
+        });
+
+        document.body.addEventListener('htmx:afterSwap', function(event) {
+            if (event.detail.target.id === 'content') {
+                event.detail.target.classList.add('loaded');
+            }
+        });
+    </script>
+</body>
+</html>

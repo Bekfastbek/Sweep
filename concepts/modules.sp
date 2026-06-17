@@ -1,0 +1,2 @@
+from "github.com/bekfastbek/numarray" v2.1 import add_simd, sub_simd, multi_vec
+import "github.com/bekfastbek/oop" v1.1 // It will import from any git mirror we will have a (language_name).lib which holds the registry and tags as versions so technically we have a decentralized registry (inspired from Golang)
