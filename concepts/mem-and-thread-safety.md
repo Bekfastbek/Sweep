@@ -61,6 +61,7 @@ You can also nest scope{} if you have varied lifetimes. The inner scope always d
 scope {
     scoped func function_with_heap() -> str {
         //logic
+        promote some_string;
         return some_string;
     } 
 } // The logic of that function will all die including the shared variables but "some_string" will stay alive with a promoted lifetime because of the snippet below (assume that snippet is a different file)
