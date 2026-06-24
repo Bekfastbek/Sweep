@@ -8,11 +8,11 @@ from "std/mem" import alloc, dealloc;
 
 scope {
     struct MyStruct {
-        i32 ptr owned_data;
-        scoped i32 ptr shared_data; // explicitly shared within this scope
+        mut ptr owned_data: i32;
+        scoped ptr shared_data: i32; // explicitly shared within this scope
 
-        MyStruct(const i32 single_val, i32 ptr shared_ptr) {
-            owned_data = alloc i32(single_val);
+        MyStruct(single_val: i32, ptr shared_ptr: i32) {
+            owned_data = alloc(single_val * sizeof(i32));
             shared_data = shared_ptr;
         }
 
@@ -23,11 +23,11 @@ scope {
     };
 
     main {
-        i32 ptr shared = alloc i32(100);
+        ptr shared_dt: i32 = alloc(100 * sizeof(i32);
         {
-            MyStruct A(10, shared);
+            MyStruct A(10, shared_dt);
             {
-                MyStruct B(20, shared);
+                MyStruct B(20, shared_dt);
             } // B's owned_data is freed, but shared_data and the struct itself stays alive
 
             print(*A.shared_data, '\n'); // safe, still in scope
@@ -45,9 +45,9 @@ Here are some rules to clarify further:
 - Referencing shared data after the `scope {}` block ends is a compile-time error. You must either pass by value or just extend the scope boundary itself... or just nest scope{}. Here is an example of pass by value:
 
 ```cpp
-mut int val; // val was declared outside of scope block so the scope rules do not apply to it but it can't take references from inside the scope in any way
+mut val: int; // val was declared outside of scope block so the scope rules do not apply to it but it can't take references from inside the scope in any way
 scope {
-    i32 some_function_with_logic() {
+    func some_function_with_logic() -> i32 {
         return value;
     }
     mut val = some_function_with_logic(); // It is fine for some small return values but for large data you might want to extend the lifetime instead
@@ -59,14 +59,15 @@ You can also nest scope{} if you have varied lifetimes. The inner scope always d
 ```cpp
 // Assume this scope is in a different file i.e. it is a library
 scope {
-    scoped str function_with_heap() {
+    scoped func function_with_heap() -> str {
         //logic
+        promote some_string;
         return some_string;
     } 
 } // The logic of that function will all die including the shared variables but "some_string" will stay alive with a promoted lifetime because of the snippet below (assume that snippet is a different file)
 
 scope {
-    str value = function_with_heap(); // The function's lifetime got promoted to this scope instead which only carries the heap allocated string
+    value: str = function_with_heap(); // The function's lifetime got promoted to this scope instead which only carries the heap allocated string
 }
 ```
 
@@ -83,8 +84,8 @@ If you end up using Arc or Rc because the lifetime is dynamic, you must still wr
 
 ```cpp
 scope {
-    i32 function() { 
-        Rc i32 value;
+    func function() -> i32 { 
+        Rc value: i32;
     }
     // more logic and consider more functions
 } // If for some reason the ref counter gets in a cycle, scope block will guarantee the destruction regardless 
@@ -108,13 +109,13 @@ Shared state is only accessible inside a `merge{}` block, making data races stru
 This time I am using my own language concept as a pseudocode to explain:
 ```cpp
 scope {
-    i32 data[16384];
-    i16 threads;
+    data[16384]: i32;
+    threads: i16;
     @feature get_thread_count = threads;
-    shared atomic i64 total = 0;
-    shared atomic i64 local_sum = 0;
+    shared atomic total: i32 = 0;
+    shared atomic local_sum: i32 = 0;
     spawn(threads, steal) {
-        for mut i32 i = 0; i < slice_size; i++ {
+        for mut i: i32 = 0; i < slice_size; i++ {
             mut local_sum += data[i];
         }
         merge {
@@ -136,9 +137,9 @@ For IO, sockets, or event driven patterns that don't fit data parallelism, spawn
 
 ```cpp
 scope {
-    shared rw i8 buffer[1024];
-    shared rw i16 buffer_size = 0;
-    shared rw i32 connection = 0;
+    shared rw buffer[1024]: i8;
+    shared rw buffer_size: i16 = 0;
+    shared rw connection: i32 = 0;
 
     spawn(2, manual) {
         _thread2 __pause;
