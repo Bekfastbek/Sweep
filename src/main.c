@@ -20,10 +20,10 @@ int main(int argc, char **argv) {
     }
 
     Stream stream = {0};
-    arena_alloc(anyarr_arena, sizeof(stream), (void*) &stream.buf);
-    stream.fp = fopen("../concepts/compiler.sp", "r");
-    if (stream.fp == NULL) {
-        perror("Error opening concepts/compiler.sp");
+    arena_alloc(ARENA_CTX, sizeof(stream), (void**) &stream.buf);
+    stream.fp = fopen("../tests/compiler_test.sp", "r");
+    if (stream.fp == nullptr) {
+        perror("Error opening tests/compiler_test.sp");
         return 1;
     }
 
