@@ -38,11 +38,11 @@ scope {
 
 Here are some rules to clarify further:
 
-- **Single-owner variables** behave like std::unique_ptr by default. They're destroyed at the end of their local scope.
+- **Single-owner variables** behave like `std::unique_ptr` by default. They're destroyed at the end of their local scope.
 - **Scoped variables** are destroyed at the end of the enclosing `scope {}` block, regardless of when the owning struct goes out of local scope.
-- The `scoped` keyword can **only** appear inside a `scope {}` block. This is enforced by the compiler. You cannot have shared ownership outside of scope unless you use unsafe{} or Arc.
+- The `scoped` keyword can **only** appear inside a `scope {}` block. This is enforced by the compiler. You cannot have shared ownership outside of scope unless you use `unsafe{}` or `Rc`.
 - If a single-owner variable is referenced by more than one owner outside its local scope, the compiler throws an error. No ambiguity.
-- Referencing scoped data after the `scope {}` block ends is a compile-time error. You must either pass by value or just extend the scope boundary itself... or just nest scope{}. Here is an example of pass by value:
+- Referencing scoped data after the `scope {}` block ends is a compile-time error. You must either pass by value or just extend the scope boundary itself... or just nest `scope{}`. Here is an example of pass by value:
 
 ```cpp
 val: mut int;
@@ -54,7 +54,7 @@ scope {
 }
 ```
 
-You can also nest scope{} if you have varied lifetimes. The inner scope always destroys first but if you make a reference from the inner scope to the outer scope then the lifetime of that referenced variable gets promoted to the outer scope. So if for example if a function returns a reference, that reference would get promoted to the outer scope which is actually traceable during compile time. Here is an example:
+You can also nest `scope{}` if you have varied lifetimes. The inner scope always destroys first but if you make a reference from the inner scope to the outer scope then the lifetime of that referenced variable gets promoted to the outer scope. So if for example if a function returns a reference, that reference would get promoted to the outer scope which is actually traceable during compile time. Here is an example:
 
 ```cpp
 // Assume this scope is in a different file i.e. it is a library
@@ -80,7 +80,7 @@ destructor {
 }
 ```
 
-If you end up using Arc or Rc for any reason, you must still wrap it in scope block to prevent potential memory leaks. Here is an example:
+If you end up using `Arc` or `Rc` for any reason, you must still wrap it in scope block to prevent potential memory leaks. Here is an example:
 
 ```cpp
 scope {
@@ -94,8 +94,8 @@ scope {
   // ensuring that memory leak is impossible 
 ```
 
-And if the lifetimes are truly unknown, then the only option left is unsafe{} which no language can solve since the lifetime is handled by OS or FFI, etc.
-Think of the ownership model as **upgraded RAII**. You write your code like normal RAII with destructors and if you want scoped variables then wrap the structs and functions with scope{} and use the scoped qualifier and declare the destructor then you can freely pass references of scoped variables or structs and the cleanup is automatic with no runtime cost. The scope block is the lifetime. Everything inside it shares that lifetime for `scoped` data. Everything outside cannot touch it. The compiler enforces this statically.
+And if the lifetimes are truly unknown, then the only option left is `unsafe{}` which no language can solve since the lifetime is handled by OS or FFI, etc.
+Think of the ownership model as **upgraded RAII**. You write your code like normal RAII with destructors and if you want scoped variables then wrap the structs and functions with `scope{}` and use the `scoped` qualifier and declare the destructor then you can freely pass references of scoped variables or structs and the cleanup is automatic with no runtime cost. The scope block is the lifetime. Everything inside it shares that lifetime for `scoped` data. Everything outside cannot touch it. The compiler enforces this statically.
 
 
 ---
