@@ -106,24 +106,21 @@ The concurrency model is built around a single primitive: `spawn{}`.
 By default, every variable inside spawn is thread local, each thread gets its own copy. 
 Shared state is only accessible inside a `merge{}` block, making data races structurally unrepresentable rather than just discouraged.
 
-This time I am using my own language concept as a pseudocode to explain:
 ```cpp
-scope {
     data[16384]: i32;
     threads: i16;
     @feature get_thread_count = threads;
-    shared atomic total: i32 = 0;
-    shared atomic local_sum: i32 = 0;
+    shared total: atomic i32 = 0;
+    shared local_sum: atomic i32 = 0;
     spawn(threads, steal) {
-        for mut i: i32 = 0; i < slice_size; i++ {
-            mut local_sum += data[i];
+        for i: mut i32 = 0; i < slice_size; i++ {
+            local_sum: mut += data[i];
         }
         merge {
             combine local_sum;
-            mut total += local_sum;
+            total: mut += local_sum;
         }
     }
-}
 ```
 
 - Thread local is the default, no exceptions
@@ -136,7 +133,6 @@ An optional `steal` parameter enables dynamic load balancing. The runtime takes 
 For IO, sockets, or event driven patterns that don't fit data parallelism, spawn supports manual mode with thread qualifiers:
 
 ```cpp
-scope {
     shared buffer[1024]: rw i8;
     shared buffer_size: rw i16 = 0;
     shared connection: rw i32 = 0;
@@ -160,7 +156,6 @@ scope {
             buffer_size: mut = 0;
         }
     }
-}
 ```
 
 Thread qualifiers are bound to the spawn block and cannot escape it. 
