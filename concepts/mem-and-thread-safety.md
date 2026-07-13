@@ -23,7 +23,7 @@ scope {
     };
 
     main {
-        shared_dt: ptr i32 = alloc(100 * sizeof(i32);
+        shared_dt: ptr i32 = alloc(100 * sizeof(i32));
         {
             MyStruct A(10, shared_dt);
             {
