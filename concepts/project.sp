@@ -3,14 +3,13 @@
 @project {
     project.name = "something_application";
     project.mode = embedded;
+    build.stdlib = false;
     // if the project.mode is embedded, then the user can freely access safety options and can freely disable features
     safety.bounds_checking = false;
-    safety.stdlib = false;
     safety.stack_overflow_check = false;
     safety.integer_overflow = false;
     safety.null_check = false;
-    safety.heap_alloc = false; // pure stack, true will allow to write custom allocators for heap still
-    safety.type_safety = true;
+    safety.heap_alloc = false; // pure stack, true will allow to write custom allocators for heap
     safety.multithreading = false;
     safety.simd = false;
     safety.uninitialized_read = true;

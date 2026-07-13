@@ -8,10 +8,10 @@ from "std/mem" import alloc, dealloc;
 
 scope {
     struct MyStruct {
-        mut ptr owned_data: i32;
-        scoped ptr shared_data: i32; // explicitly shared within this scope
+        owned_data: mut ptr i32;
+        scoped shared_data: ptr i32; // explicitly shared within this scope
 
-        MyStruct(single_val: i32, ptr shared_ptr: i32) {
+        MyStruct(single_val: i32, shared_ptr: ptr i32) {
             owned_data = alloc(single_val * sizeof(i32));
             shared_data = shared_ptr;
         }
@@ -23,7 +23,7 @@ scope {
     };
 
     main {
-        ptr shared_dt: i32 = alloc(100 * sizeof(i32);
+        shared_dt: ptr i32 = alloc(100 * sizeof(i32);
         {
             MyStruct A(10, shared_dt);
             {
@@ -42,15 +42,15 @@ Here are some rules to clarify further:
 - **Scoped variables** are destroyed at the end of the enclosing `scope {}` block, regardless of when the owning struct goes out of local scope.
 - The `scoped` keyword can **only** appear inside a `scope {}` block. This is enforced by the compiler. You cannot have shared ownership outside of scope unless you use unsafe{} or Arc.
 - If a single-owner variable is referenced by more than one owner outside its local scope, the compiler throws an error. No ambiguity.
-- Referencing shared data after the `scope {}` block ends is a compile-time error. You must either pass by value or just extend the scope boundary itself... or just nest scope{}. Here is an example of pass by value:
+- Referencing scoped data after the `scope {}` block ends is a compile-time error. You must either pass by value or just extend the scope boundary itself... or just nest scope{}. Here is an example of pass by value:
 
 ```cpp
-mut val: int; // val was declared outside of scope block so the scope rules do not apply to it but it can't take references from inside the scope in any way
+val: mut int;
 scope {
-    func some_function_with_logic() -> i32 {
+    scoped func some_function_with_logic() -> i32 {
         return value;
     }
-    mut val = some_function_with_logic(); // It is fine for some small return values but for large data you might want to extend the lifetime instead
+    val: mut = some_function_with_logic();
 }
 ```
 
@@ -137,17 +137,17 @@ For IO, sockets, or event driven patterns that don't fit data parallelism, spawn
 
 ```cpp
 scope {
-    shared rw buffer[1024]: i8;
-    shared rw buffer_size: i16 = 0;
-    shared rw connection: i32 = 0;
+    shared buffer[1024]: rw i8;
+    shared buffer_size: rw i16 = 0;
+    shared connection: rw i32 = 0;
 
     spawn(2, manual) {
         _thread2 __pause;
 
          while _thread1 !connection {
-            _thread1 mut connection = socket_accept();
+            _thread1 connection = socket_accept();
         }
-        _thread1 mut buffer_size = socket_read(connection, buffer);
+        _thread1 buffer_size: rw = socket_read(connection, buffer);
         while _thread1 buffer_size !> 0 {
             if _thread1 buffer_size > 0 { 
                 _thread2 __continue;
@@ -157,7 +157,7 @@ scope {
         _thread2 socket_process(buffer);
 
         merge {
-            mut buffer_size = 0;
+            buffer_size: mut = 0;
         }
     }
 }
