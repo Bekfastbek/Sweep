@@ -38,7 +38,7 @@ scope {
 
 Here are some rules to clarify further:
 
-- **Single-owner variables** behave like normal RAII. They're destroyed at the end of their local scope.
+- **Single-owner variables** behave like std::unique_ptr by default. They're destroyed at the end of their local scope.
 - **Scoped variables** are destroyed at the end of the enclosing `scope {}` block, regardless of when the owning struct goes out of local scope.
 - The `scoped` keyword can **only** appear inside a `scope {}` block. This is enforced by the compiler. You cannot have shared ownership outside of scope unless you use unsafe{} or Arc.
 - If a single-owner variable is referenced by more than one owner outside its local scope, the compiler throws an error. No ambiguity.
@@ -80,7 +80,7 @@ destructor {
 }
 ```
 
-If you end up using Arc or Rc because the lifetime is dynamic, you must still wrap it in scope block to prevent potential memory leaks. Here is an example:
+If you end up using Arc or Rc for any reason, you must still wrap it in scope block to prevent potential memory leaks. Here is an example:
 
 ```cpp
 scope {
@@ -126,7 +126,6 @@ Shared state is only accessible inside a `merge{}` block, making data races stru
 - Thread local is the default, no exceptions
 - Shared variables are only accessible inside merge
 - Shared atomic and shared rw are merge strategies, not freely accessible state
-- Structural deadlock detection via static wait graph analysis at compile time
 
 An optional `steal` parameter enables dynamic load balancing. The runtime takes half the queue from an idle thread's pool and migrates tasks. Since data is local to the task not the thread ID, task migration preserves the thread local guarantee completely.
 
@@ -144,7 +143,7 @@ For IO, sockets, or event driven patterns that don't fit data parallelism, spawn
             _thread1 connection = socket_accept();
         }
         _thread1 buffer_size: rw = socket_read(connection, buffer);
-        while _thread1 buffer_size !> 0 {
+        while _thread1 buffer_size < 0 {
             if _thread1 buffer_size > 0 { 
                 _thread2 __continue;
             }
